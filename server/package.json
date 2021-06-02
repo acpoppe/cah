@@ -1,0 +1,14 @@
+{
+  "name": "cah-server",
+  "version": "1.0.0",
+  "description": "Cards Against Humanity",
+  "main": "index.js",
+  "dependencies": {
+    "ws": "^7.4.6"
+  },
+  "scripts": {
+    "test": "test"
+  },
+  "author": "Allison Poppe",
+  "license": "UNLICENSED"
+}
