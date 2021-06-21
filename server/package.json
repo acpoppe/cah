@@ -1,13 +1,18 @@
 {
+  "type": "module",
   "name": "cah-server",
   "version": "1.0.0",
   "description": "Cards Against Humanity",
   "main": "index.js",
   "dependencies": {
-    "ws": "^7.4.6"
+    "ws": "^7.4.6",
+    "ip": "^1.1.5",
+    "nodemon": "^2.0.6",
+    "utf8": "^3.0.0"
   },
   "scripts": {
-    "test": "test"
+    "test": "test",
+    "startmon": "nodemon server.js"
   },
   "author": "Allison Poppe",
   "license": "UNLICENSED"
