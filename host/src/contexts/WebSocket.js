@@ -109,7 +109,7 @@ const WebSocketGoodies = ({ children }) => {
     const socketClose = () => {
         socket.current.close()
 
-        gameState.current = {GameMode: "NOT_RUNNING"}
+        gameState.current = { ...gameState.current, GameMode: "NOT_RUNNING" }
         ws = {...ws, isSocketConnected: state.isSocketConnected, gameState: gameState.current}
         setState({ ...state })
     }
