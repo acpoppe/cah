@@ -66,7 +66,7 @@ class Game {
     }
 
     generateGameStateForHost() {
-        state = {
+        let state = {
             GameMode: this.gameMode,
             cardCzarUUID: this.cardCzar.uuid,
             dealtBlackCard: this.dealtBlackCard,

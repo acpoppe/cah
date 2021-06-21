@@ -71,7 +71,9 @@ const WebSocketGoodies = ({ children }) => {
             command: commandToServer,
             data: message
         }
-        socket.current.send(JSON.stringify(payload))
+        if (socket.current.readyState !== WebSocket.CONNECTING) {
+            socket.current.send(JSON.stringify(payload))
+        }
     }
 
     const socketConnect = () => {
