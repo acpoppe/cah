@@ -1,14 +1,16 @@
 class PlayerConnection {
     uuid = ''
     connection = null
+    playerName = ''
     hand = []
     score = 0
     submittedCards = []
+    isCardCzar = false
 
-    constructor(uuid, connection) {
+    constructor(uuid, connection, playerName) {
         this.uuid = uuid
         this.connection = connection
-        // Deal hand
+        this.playerName = playerName
     }
 }
 

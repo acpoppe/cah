@@ -5,14 +5,19 @@ function Lobby() {
 
     const socketContext = useContext(WebSocketContext)
 
-    function closeConnection() {
+    function quitGame() {
         socketContext.quitGame()
+    }
+
+    function beginGame() {
+        socketContext.beginPlaying()
     }
   
     return (
         <div>
-            <button onClick={closeConnection}>Quit Game</button>
+            <button onClick={quitGame}>Quit Game</button>
             <p>Lobby</p>
+            <button onClick={beginGame}>Begin Game</button>
         </div>
     );
   }

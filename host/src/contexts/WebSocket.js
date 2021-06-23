@@ -14,20 +14,20 @@ export { WebSocketContext }
  * --------------------------------------
  ****************************************************/
 const WebSocketGoodies = ({ children }) => {
-    let ws
+    let ws;
 
 /***************************************************
  *  CONNECTION STATE
  ****************************************************/
     const [state, setState] = useState({
-        isSocketConnected: false,
-        isRegisteredAsHost: false,
         uuidCounter: 0,
         uuid: ''
-    })
+    });
 
-    const socket = useRef({})
-    const gameState = useRef({})
+    const socket = useRef({});
+    const gameState = useRef({});
+    const isSocketConnected = useRef(false);
+    const isRegisteredAsHost = useRef(false);
 
 
 /***************************************************
@@ -81,9 +81,10 @@ const WebSocketGoodies = ({ children }) => {
 
         sock.onopen = function () {
             console.log("Host: Opened connection with server")
-            setState({ ...state, isSocketConnected: true })
+            isSocketConnected.current = true;
+            setState({ ...state })
             sock.send(JSON.stringify({ uuid: state.uuid, senderType: "host", command: "NewOrConnectToGame", data: "" }))
-            ws = {...ws, isSocketConnected: state.isSocketConnected}
+            ws = {...ws, isSocketConnected: isSocketConnected.current}
         };
 
         sock.onerror = function (error) {
@@ -92,26 +93,23 @@ const WebSocketGoodies = ({ children }) => {
 
         sock.onmessage = function (e) {
             console.log("Host: Received Message - " + e.data)
-            const parsedMsg = JSON.parse(utf8.decode(e.data))
+            const parsedMsg = JSON.parse(e.data)
+            //const parsedMsg = JSON.parse(utf8.decode(e.data))
             receivedMessage(parsedMsg)
         }
 
         sock.onclose = function() {
-            setState({...state, isSocketConnected: false})
-            console.log("Host: Closed connection with server")
-            ws = {...ws, isSocketConnected: state.isSocketConnected}
+            console.log("Host: Closed connection with server");
+            connectionIsClosingOrClosed();
         }
 
-        ws = {...ws, isSocketConnected: state.isSocketConnected}
+        ws = {...ws, isSocketConnected: isSocketConnected.current}
         socket.current = sock
     }
 
     const socketClose = () => {
-        socket.current.close()
-
-        gameState.current = { ...gameState.current, GameMode: "NOT_RUNNING" }
-        ws = {...ws, isSocketConnected: state.isSocketConnected, gameState: gameState.current}
-        setState({ ...state })
+        socket.current.close();
+        connectionIsClosingOrClosed();
     }
 
 
@@ -121,20 +119,20 @@ const WebSocketGoodies = ({ children }) => {
     const receivedMessage = (message) => {
         switch(message.command) {
             case "NewGameCreatedOrIsRunning":
-                registerAsHost()
+                registerAsHost();
                 break;
             case "SuccessfullyRegisteredAsHost":
-                setState( {...state, isRegisteredAsHost: true} )
+                isRegisteredAsHost.current = true;
+                setState( {...state} );
                 break;
             case "UpdateHostStatus":
-                gameState.current = message.data
-                ws = {...ws, gameState: gameState.current}
-                setState({ ...state })
+                gameState.current = message.data;
+                ws = {...ws, gameState: gameState.current};
+                setState({ ...state });
                 break;
             case "ServerEnding":
-                socketClose()
-                setState({ ...state, uuid: '' })
-                localStorage.clear()
+                connectionIsClosingOrClosed();
+                socketClose();
                 break;
             default:
                 // Do nothing and ignore it if we don't recognize
@@ -145,8 +143,21 @@ const WebSocketGoodies = ({ children }) => {
 /***************************************************
  *  RECEIVED COMMAND HANDLING/API/WHATEVER
  ****************************************************/
+    const connectionIsClosingOrClosed = () => {
+        gameState.current = { ...gameState.current, gameMode: "NOT_RUNNING", players: [] };
+        isSocketConnected.current = false;
+        isRegisteredAsHost.current = false;
+        ws = { ...ws, isSocketConnected: false, gameState: gameState.current};
+        localStorage.clear();
+        setState({ ...state, uuid: ''});
+    }
+
     const registerAsHost = () => {
         sendMessage("RegisterAsHost", "")
+    }
+
+    const beginPlaying = () => {
+        sendMessage("BeginPlaying", "")
     }
 
     const quitGame = () => {
@@ -157,11 +168,12 @@ const WebSocketGoodies = ({ children }) => {
  *  PASSED DOWN DATA
  ****************************************************/
     ws = {
-        isSocketConnected: state.isSocketConnected,
+        isSocketConnected: isSocketConnected.current,
         gameState: gameState.current,
         socketConnect,
         socketClose,
         sendMessage,
+        beginPlaying,
         quitGame
     }
 

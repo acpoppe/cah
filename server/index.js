@@ -3,7 +3,6 @@ import WebSocket from 'ws'
 import utf8 from 'utf8'
 
 import Game from './game.js'
-import HostConnection from './hostConnection.js'
 
 const WSPORT = 9898
 const WSHOST = '0.0.0.0'
@@ -31,18 +30,38 @@ wsServer.on('connection', function connection(ws, request) {
     // All messages should be a JSON string with a command property,
     // so route our next action based on what that is
     ws.on('message', (message) => {
+        ws.userUUID = 
         console.log('received: %s', message)
-        const parsedMsg = JSON.parse(utf8.decode(message))
+        const parsedMsg = JSON.parse(message)
+        // const parsedMsg = JSON.parse(utf8.decode(message))
+        ws.userUUID = parsedMsg.uuid
         console.log(parsedMsg)
         switch (parsedMsg.command) {
             case "NewOrConnectToGame":
                 console.log("New or Connect to Game")
-                game.newGame()
+                if (!game.isRunning) {
+                    game.newGame()
+                }
                 sendMessage(ws, "NewGameCreatedOrIsRunning", "")
+                break;
+            case "ConnectToGame":
+                console.log("Client request to connect to game")
+                if (game.isRunning) {
+                    sendMessage(ws, "NewGameCreatedOrIsRunning", "")
+                } else {
+                    sendMessage(ws, "NoGameRunning", "")
+                }
                 break;
             case "RegisterAsHost":
                 console.log("Received New HostRegistration")
                 game.registerNewHost(ws, parsedMsg.uuid)
+                break;
+            case "RegisterAsPlayer":
+                console.log("Received New Player Registration")
+                game.registerNewPlayer(ws, parsedMsg.uuid, parsedMsg.data.playerName)
+                break;
+            case "BeginPlaying":
+                beginPlaying()
                 break;
             case "EndGame":
                 endGame()
@@ -69,6 +88,10 @@ function sendMessage(socketToSendTo, commandToSend, message) {
         data: message
     }
     socketToSendTo.send(JSON.stringify(payload))
+}
+
+function beginPlaying() {
+    game.beginPlaying()
 }
 
 function endGame() {
