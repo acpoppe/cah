@@ -1,10 +1,9 @@
 import React, { createContext, useState, useEffect, useRef } from 'react'
-import utf8 from 'utf8'
 
 /***************************************************
  *  CONTEXT CREATION
  ****************************************************/
-const WebSocketContext = createContext(null)
+const WebSocketContext = createContext(null);
 
 export { WebSocketContext }
 
@@ -14,23 +13,23 @@ export { WebSocketContext }
  * --------------------------------------
  ****************************************************/
 const WebSocketGoodies = ({ children }) => {
-    let ws
+    let ws;
 
 /***************************************************
  *  CONNECTION STATE
  ****************************************************/
     const [state, setState] = useState({
-        isSocketConnected: false,
-        isRegisteredAsPlayer: false,
         uuidCounter: 0,
         uuid: ''
-    })
+    });
 
-    const socket = useRef({})
-    const isGameRunning = useRef(false)
-    const isNameTaken = useRef(false)
-    const gameState = useRef({})
-    const playerNameRef = useRef('Anonymous Player')
+    const socket = useRef({});
+    const isGameRunning = useRef(false);
+    const isNameTaken = useRef(false);
+    const gameState = useRef({});
+    const playerNameRef = useRef('Anonymous Player');
+    const isSocketConnected = useRef(false);
+    const isRegisteredAsClient = useRef(false);
 
 
 /***************************************************
@@ -80,46 +79,39 @@ const WebSocketGoodies = ({ children }) => {
     }
 
     const socketConnect = () => {
-        let sock = new WebSocket('ws://192.168.1.11:9898')
-        isNameTaken.current = false
-        ws = { ...ws, isNameTaken: isNameTaken.current }
-        setState({ ...state })
+        let sock = new WebSocket('ws://192.168.1.11:9898');
 
         sock.onopen = function () {
             console.log("Client: Opened connection with server")
-            setState({ ...state, isSocketConnected: true })
+            isSocketConnected.current = true;
+            setState({ ...state })
             sock.send(JSON.stringify({ uuid: state.uuid, senderType: "client", command: "ConnectToGame", data: "" }))
-            ws = {...ws, isSocketConnected: state.isSocketConnected}
+            ws = {...ws, isSocketConnected: isSocketConnected.current}
         };
 
         sock.onerror = function (error) {
             console.log("Client: Websocket Error - " + error)
-        }
+        };
 
         sock.onmessage = function (e) {
             console.log("Client: Received Message - " + e.data)
             const parsedMsg = JSON.parse(e.data)
-            // const parsedMsg = JSON.parse(utf8.decode(e.data))
             receivedMessage(parsedMsg)
-        }
+        };
 
         sock.onclose = function() {
-            setState({...state, isSocketConnected: false})
-            console.log("Client: Closed connection with server")
-            ws = {...ws, isSocketConnected: state.isSocketConnected}
-        }
+            console.log("Client: Closed connection with server");
+            connectionIsClosingOrClosed();
+        };
 
-        ws = {...ws, isSocketConnected: state.isSocketConnected}
-        socket.current = sock
-    }
+        ws = {...ws, isSocketConnected: isSocketConnected.current};
+        socket.current = sock;
+    };
 
     const socketClose = () => {
-        socket.current.close()
-
-        gameState.current = { ...gameState.current, GameMode: "NOT_RUNNING" }
-        ws = {...ws, isSocketConnected: state.isSocketConnected, gameState: gameState.current}
-        setState({ ...state })
-    }
+        socket.current.close();
+        connectionIsClosingOrClosed();
+    };
 
 
 /***************************************************
@@ -128,19 +120,14 @@ const WebSocketGoodies = ({ children }) => {
     const receivedMessage = (message) => {
         switch(message.command) {
             case "NewGameCreatedOrIsRunning":
-                registerAsClient()
-                isGameRunning.current = true
-                ws = { ...ws, isGameRunning: isGameRunning.current }
-                setState({ ...state })
+                registerAsClient();
                 break;
             case "NoGameRunning":
-                isGameRunning.current = false
-                ws = { ...ws, isGameRunning: isGameRunning.current }
-                setState({ ...state })
-                socketClose()
+                socketClose();
                 break;
             case "SuccessfullyRegisteredAsClient":
-                setState( {...state, isRegisteredAsPlayer: true} )
+                isRegisteredAsClient.current = true;
+                setState({ ...state });
                 break;
             case "NameTaken":
                 isNameTaken.current = true
@@ -150,48 +137,50 @@ const WebSocketGoodies = ({ children }) => {
                 break;
             case "UpdatePlayerStatus":
                 gameState.current = message.data
-                ws = {...ws, gameState: gameState.current}
-                setState({ ...state })
+                ws = {...ws, gameState: gameState.current};
+                setState({ ...state });
                 break;
             case "ServerEnding":
-                socketClose()
-                setState({ ...state, uuid: '' })
-                localStorage.clear()
+                socketClose();
                 break;
             default:
                 // Do nothing and ignore it if we don't recognize
         }
-    }
+    };
 
 
 /***************************************************
  *  RECEIVED COMMAND HANDLING/API/WHATEVER
  ****************************************************/
-    const registerAsClient = () => {
-        sendMessage("RegisterAsPlayer", {playerName: playerNameRef.current})
+    const connectionIsClosingOrClosed = () => {
+        gameState.current = { ...gameState.current, gameMode: "NOT_RUNNING", players: [] };
+        isSocketConnected.current = false;
+        isRegisteredAsClient.current = false;
+        ws = { ...ws, isSocketConnected: false, gameState: gameState.current};
+        localStorage.clear();
+        setState({ ...state, uuid: ''});
     }
 
-    const quitGame = () => {
-        sendMessage("EndGame", "")
+    const registerAsClient = () => {
+        sendMessage("RegisterAsPlayer", {playerName: playerNameRef.current});
     }
 
     const updatePlayerName = (playerName) => {
-        playerNameRef.current = playerName
+        playerNameRef.current = playerName;
     }
 
 /***************************************************
  *  PASSED DOWN DATA
  ****************************************************/
     ws = {
-        isSocketConnected: state.isSocketConnected,
+        isSocketConnected: isSocketConnected.current,
         gameState: gameState.current,
         isGameRunning: isGameRunning.current,
         socketConnect,
         socketClose,
         sendMessage,
-        quitGame,
         updatePlayerName
-    }
+    };
 
 
 /***************************************************
@@ -201,7 +190,7 @@ const WebSocketGoodies = ({ children }) => {
         <WebSocketContext.Provider value={ws}>
             {children}
         </WebSocketContext.Provider>
-    )
+    );
 }
 
 export default WebSocketGoodies

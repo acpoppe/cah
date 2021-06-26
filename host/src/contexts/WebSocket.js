@@ -1,10 +1,9 @@
 import React, { createContext, useState, useEffect, useRef } from 'react'
-import utf8 from 'utf8'
 
 /***************************************************
  *  CONTEXT CREATION
  ****************************************************/
-const WebSocketContext = createContext(null)
+const WebSocketContext = createContext(null);
 
 export { WebSocketContext }
 
@@ -77,35 +76,34 @@ const WebSocketGoodies = ({ children }) => {
     }
 
     const socketConnect = () => {
-        let sock = new WebSocket('ws://192.168.1.11:9898')
+        let sock = new WebSocket('ws://192.168.1.11:9898');
 
         sock.onopen = function () {
-            console.log("Host: Opened connection with server")
+            console.log("Host: Opened connection with server");
             isSocketConnected.current = true;
-            setState({ ...state })
-            sock.send(JSON.stringify({ uuid: state.uuid, senderType: "host", command: "NewOrConnectToGame", data: "" }))
-            ws = {...ws, isSocketConnected: isSocketConnected.current}
+            setState({ ...state });
+            sock.send(JSON.stringify({ uuid: state.uuid, senderType: "host", command: "NewOrConnectToGame", data: "" }));
+            ws = {...ws, isSocketConnected: isSocketConnected.current};
         };
 
         sock.onerror = function (error) {
-            console.log("Host: Websocket Error - " + error)
-        }
+            console.log("Host: Websocket Error - " + error);
+        };
 
         sock.onmessage = function (e) {
-            console.log("Host: Received Message - " + e.data)
-            const parsedMsg = JSON.parse(e.data)
-            //const parsedMsg = JSON.parse(utf8.decode(e.data))
-            receivedMessage(parsedMsg)
-        }
+            console.log("Host: Received Message - " + e.data);
+            const parsedMsg = JSON.parse(e.data);
+            receivedMessage(parsedMsg);
+        };
 
         sock.onclose = function() {
             console.log("Host: Closed connection with server");
             connectionIsClosingOrClosed();
-        }
+        };
 
-        ws = {...ws, isSocketConnected: isSocketConnected.current}
-        socket.current = sock
-    }
+        ws = {...ws, isSocketConnected: isSocketConnected.current};
+        socket.current = sock;
+    };
 
     const socketClose = () => {
         socket.current.close();
@@ -131,7 +129,6 @@ const WebSocketGoodies = ({ children }) => {
                 setState({ ...state });
                 break;
             case "ServerEnding":
-                connectionIsClosingOrClosed();
                 socketClose();
                 break;
             default:
@@ -175,7 +172,7 @@ const WebSocketGoodies = ({ children }) => {
         sendMessage,
         beginPlaying,
         quitGame
-    }
+    };
 
 
 /***************************************************
@@ -185,7 +182,7 @@ const WebSocketGoodies = ({ children }) => {
         <WebSocketContext.Provider value={ws}>
             {children}
         </WebSocketContext.Provider>
-    )
+    );
 }
 
 export default WebSocketGoodies

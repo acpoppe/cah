@@ -3,11 +3,11 @@ import { WebSocketContext } from "../contexts/WebSocket.js"
 
 function Home() {
 
-    const socketContext = useContext(WebSocketContext)
+    const socketContext = useContext(WebSocketContext);
     
     function newGame() {
-      socketContext.socketConnect()
-    }
+        socketContext.socketConnect();
+    };
 
     return (
         <div>

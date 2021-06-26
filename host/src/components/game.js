@@ -6,30 +6,37 @@ import Playing from "./playing.js"
 
 function Game() {
 
-    const socketContext = useContext(WebSocketContext)
+    const socketContext = useContext(WebSocketContext);
     
     const [gameState, setGameState] = useState({
         GameMode: "HOME",
-        Players: []
-    })
+        Players: [],
+        PlayPhase: '',
+        Timer: 0
+    });
 
     useEffect(() => {
         updateGameStateFromContext()
-    }, [socketContext.gameState])
+    }, [socketContext.gameState]);
 
     function updateGameStateFromContext() {
-        let gameModeSwitch = 'HOME'
-        let players = []
+        let gameModeSwitch = 'HOME';
+        let players = [];
 
         if (socketContext.gameState.gameMode === "NOT_RUNNING") {
-            gameModeSwitch = "HOME"
+            gameModeSwitch = "HOME";
         } else if (socketContext.gameState.gameMode) {
-            gameModeSwitch = socketContext.gameState.gameMode
+            gameModeSwitch = socketContext.gameState.gameMode;
         }
 
-        players = socketContext.gameState.players
-        setGameState({ ...gameState, GameMode: gameModeSwitch, Players: players })
-    }
+        players = socketContext.gameState.players;
+        setGameState({ ...gameState,
+            GameMode: gameModeSwitch,
+            Players: players,
+            PlayPhase: socketContext.gameState.playPhase,
+            Timer: socketContext.gameState.timer
+        });
+    };
 
     if (gameState.GameMode === "HOME") {
         return (
@@ -43,7 +50,7 @@ function Game() {
                 <Lobby />
                 <ul>
                     {gameState.Players.map( player => {
-                        return (<li key= {player.playerName}>{player.playerName}</li>)
+                        return (<li key= {player.playerName}>{player.playerName}</li>);
                     })}
                 </ul>
             </div>
@@ -51,6 +58,7 @@ function Game() {
     } else if (gameState.GameMode === "PLAYING") {
         return (
             <div>
+                <p>{gameState.Timer}</p>
                 <Playing />
             </div>
         );

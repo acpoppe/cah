@@ -12,6 +12,10 @@ class Game {
     dealtBlackCard;
     blackDeck;
     whiteDeck;
+    playPhase;
+
+    gameTicks;
+    timer;
 
     constructor() {
         this.isRunning = false;
@@ -27,6 +31,9 @@ class Game {
         this.whiteDeck.loadWhiteCardsFromJSON();
         this.blackDeck.shuffle();
         this.whiteDeck.shuffle();
+        this.playPhase = '';
+        this.gameTicks = 0;
+        this.timer = 45;
     }
 
     newGame() {
@@ -40,6 +47,9 @@ class Game {
         this.whiteDeck.loadWhiteCardsFromJSON();
         this.blackDeck.shuffle();
         this.whiteDeck.shuffle();
+        this.playPhase = '';
+        this.gameTicks = 0;
+        this.timer = 45;
     }
 
     quitGame() {
@@ -50,6 +60,9 @@ class Game {
         this.gameMode = "NOT_RUNNING";
         this.cardCzar = {uuid: ''};
         this.dealtBlackCard = {};
+        this.playPhase = '';
+        this.gameTicks = 0;
+        this.timer = 45;
     }
 
     beginPlaying() {
@@ -58,26 +71,62 @@ class Game {
         this.dealTenCardsToEachPlayer();
         this.dealtBlackCard = this.blackDeck.pullTopCard();
         this.chooseCardCzar();
+        this.playPhase = "ANNOUNCE_CZAR";
+        
         this.updateGameStateForAllHosts();
         this.updateGameStateForAllPlayers();
     }
 
     chooseCardCzar() {
-        let czarIndex;
-        if (this.cardCzar.uuid === '') {
-            czarIndex = Math.floor(Math.random() * this.playersConnected.length);
-        } else {
-            czarIndex = this.findPlayerIndexByUUID(cardCzar.uuid) % this.playersConnected.length;
-            this.findPlayerByUUID(this.cardCzar.uuid).isCardCzar = false;
+        if (this.cardCzar.uuid = '') {
+            let czarIndex;
+            if (this.cardCzar.uuid === '') {
+                czarIndex = Math.floor(Math.random() * this.playersConnected.length);
+            } else {
+                czarIndex = this.findPlayerIndexByUUID(cardCzar.uuid) % this.playersConnected.length;
+                this.findPlayerByUUID(this.cardCzar.uuid).isCardCzar = false;
+            }
+            this.playersConnected[czarIndex].isCardCzar = true;
+            this.cardCzar = this.playersConnected[czarIndex];
         }
-        this.playersConnected[czarIndex].isCardCzar = true;
-        this.cardCzar = this.playersConnected[czarIndex];
     }
 
     gameTick() {
         if (this.gameMode === "PLAYING") {
-
+            this.gameTicks++;
+            if (this.gameTicks % 20 === 0) {
+                this.gameTicks = 0;
+                this.timer--;
+                if (this.timer === -1) {
+                    this.timer = 45;
+                }
+                this.updateGameStateForAllHosts();
+            }
         }
+    }
+
+    advancePlayPhase() {
+        this.gameTicks = 0;
+        this.timer = 0;
+        if (this.playPhase === "ANNOUNCE_CZAR") {
+            this.playPhase = "CHOOSE_CARDS";
+        } else if (this.playPhase === "CHOOSE_CARDS") {
+            this.playPhase = "CHOOSE_WINNER";
+        } else if (this.playPhase === "CHOOSE_WINNER") {
+            this.playPhase = "SHOW_SCORE_WITH_ANNOUNCE_CZAR";
+        } else if (this.playPhase === "SHOW_SCORE_WITH_ANNOUNCE_CZAR") {
+            this.playPhase = "CHOOSE_CARDS";
+        }
+        this.updateGameStateForAllHosts();
+        this.updateGameStateForAllPlayers();
+    }
+
+    showFinalScore() {
+        this.playPhase = "SHOW_SCORE";
+        this.gameTicks = 0;
+        this.timer = 0;
+        this.updateGameStateForAllHosts();
+        this.updateGameStateForAllPlayers();
     }
 
     registerNewHost(connection, uuid) {
@@ -162,7 +211,9 @@ class Game {
             gameMode: this.gameMode,
             cardCzarPlayerName: this.cardCzar.playerName,
             dealtBlackCard: this.dealtBlackCard,
-            players: this.playersConnected
+            players: this.playersConnected,
+            playPhase: this.playPhase,
+            timer: this.timer
         };
         return state;
     }
@@ -175,7 +226,11 @@ class Game {
         // if playerCopy.uuid === this.cardCzar.uuid { playerCopy.czarChoices = submittedCards }
 
         // do something like above, but with isCzarWaiting = true while other players choose
-        return playerCopy;
+        return {
+            player: playerCopy,
+            gameMode: this.gameMode,
+            playPhase: this.playPhase
+        };
     }
 
     dealTenCardsToEachPlayer() {

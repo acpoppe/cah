@@ -3,14 +3,16 @@ import { WebSocketContext } from "../contexts/WebSocket.js"
 
 function Home() {
 
-    const socketContext = useContext(WebSocketContext)
+    const socketContext = useContext(WebSocketContext);
 
-    const [playerName, setPlayerName] = useState('')
+    const [playerName, setPlayerName] = useState('');
     
     function newGame() {
-        socketContext.updatePlayerName(playerName)
-        socketContext.socketConnect()
-    }
+        if (playerName !== '') {
+            socketContext.updatePlayerName(playerName);
+            socketContext.socketConnect();
+        }
+    };
 
     return (
         <div>

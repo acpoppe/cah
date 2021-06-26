@@ -1,4 +1,4 @@
-import { useState, useContext } from "react"
+import { useState, useContext, useEffect } from "react"
 import { WebSocketContext } from "../contexts/WebSocket.js"
 import Home from "./home.js"
 import Lobby from "./lobby.js"
@@ -6,54 +6,56 @@ import Playing from "./playing.js"
 
 function Game() {
 
-    const socketContext = useContext(WebSocketContext)
+    const socketContext = useContext(WebSocketContext);
 
-    const [gameMode, setGameMode] = useState("Home")
+    const [gameState, setGameState] = useState({
+        GameMode: "HOME",
+        PlayPhase: ''
+    });
 
-    function updateGameModeFromContext() {
-        if (gameMode === "Home") {
-            if (socketContext.gameState.GameMode === "LOBBY") {
-                setGameMode("Lobby")
-            } else if (socketContext.gameState.GameMode === "PLAYING") {
-                setGameMode("Playing")
-            }
+    useEffect(() => {
+        updateGameStateFromContext()
+    }, [socketContext.gameState]);
+
+    function updateGameStateFromContext() {
+        let gameModeSwitch = 'HOME';
+
+        if (socketContext.gameState.gameMode === "NOT_RUNNING") {
+            gameModeSwitch = "HOME";
+        } else if (socketContext.gameState.gameMode) {
+            gameModeSwitch = socketContext.gameState.gameMode;
         }
-        if (gameMode === "Lobby") {
-            if (socketContext.gameState.GameMode === "NOT_RUNNING") {
-                setGameMode("Home")
-            } else if (socketContext.gameState.GameMode === "PLAYING") {
-                setGameMode("Playing")
-            }
-        }
-        if (gameMode === "Playing") {
-            if (socketContext.gameState.GameMode === "LOBBY") {
-                setGameMode("Lobby")
-            } else if (socketContext.gameState.GameMode === "NOT_RUNNING") {
-                setGameMode("Home")
-            }
-        }
-    }
 
-    updateGameModeFromContext()
+        setGameState({ ...gameState,
+            GameMode: gameModeSwitch,
+            PlayPhase: socketContext.gameState.playPhase
+        });
+    };
 
-    if (gameMode === "Home") {
+    if (gameState.GameMode === "HOME") {
         return (
             <div>
                 <Home />
             </div>
         );
-    } else if (gameMode === "Lobby") {
+    } else if (gameState.GameMode === "LOBBY") {
         return (
             <div>
                 <Lobby />
             </div>
         );
-    } else if (gameMode === "Playing") {
+    } else if (gameState.GameMode === "PLAYING") {
         return (
             <div>
                 <Playing />
             </div>
         );
+    } else {
+        return (
+            <div>
+                <p>Error: No game mode exists</p>
+            </div>
+        )
     }
 }
 
