@@ -169,6 +169,10 @@ const WebSocketGoodies = ({ children }) => {
         playerNameRef.current = playerName;
     }
 
+    const advancePlayPhase = () => {
+        sendMessage("AdvanceGamePhase", "");
+    }
+
 /***************************************************
  *  PASSED DOWN DATA
  ****************************************************/
@@ -179,7 +183,8 @@ const WebSocketGoodies = ({ children }) => {
         socketConnect,
         socketClose,
         sendMessage,
-        updatePlayerName
+        updatePlayerName,
+        advancePlayPhase
     };
 
 

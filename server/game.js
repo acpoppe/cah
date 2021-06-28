@@ -78,12 +78,12 @@ class Game {
     }
 
     chooseCardCzar() {
-        if (this.cardCzar.uuid = '') {
+        if (this.cardCzar.uuid === '') {
             let czarIndex;
             if (this.cardCzar.uuid === '') {
                 czarIndex = Math.floor(Math.random() * this.playersConnected.length);
             } else {
-                czarIndex = this.findPlayerIndexByUUID(cardCzar.uuid) % this.playersConnected.length;
+                czarIndex = (this.findPlayerIndexByUUID(this.cardCzar.uuid) + 1) % this.playersConnected.length;
                 this.findPlayerByUUID(this.cardCzar.uuid).isCardCzar = false;
             }
             this.playersConnected[czarIndex].isCardCzar = true;
@@ -229,7 +229,8 @@ class Game {
         return {
             player: playerCopy,
             gameMode: this.gameMode,
-            playPhase: this.playPhase
+            playPhase: this.playPhase,
+            dealtBlackCard: this.dealtBlackCard
         };
     }
 

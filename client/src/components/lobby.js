@@ -1,7 +1,7 @@
 function Lobby() {
     return (
         <div>
-            <p>Lobby</p>
+            <p>Waiting for the game to start...</p>
         </div>
     );
 }

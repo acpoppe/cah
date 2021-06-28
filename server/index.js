@@ -66,6 +66,9 @@ wsServer.on('connection', function connection(ws, request) {
             case "EndGame":
                 endGame()
                 break;
+            case "AdvanceGamePhase":
+                game.advancePlayPhase();
+                break;
             // If we don't recognize the command, we'll ignore it
             default:
                 return;

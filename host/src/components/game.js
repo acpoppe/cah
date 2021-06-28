@@ -58,7 +58,7 @@ function Game() {
     } else if (gameState.GameMode === "PLAYING") {
         return (
             <div>
-                <p>{gameState.Timer}</p>
+                <p>Time Remaining: {gameState.Timer}</p>
                 <Playing />
             </div>
         );
