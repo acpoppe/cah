@@ -1,6 +1,5 @@
 import ip from 'ip'
 import WebSocket from 'ws'
-import utf8 from 'utf8'
 
 import Game from './game.js'
 
@@ -53,12 +52,12 @@ wsServer.on('connection', function connection(ws, request) {
                 }
                 break;
             case "RegisterAsHost":
-                console.log("Received New HostRegistration")
-                game.registerNewHost(ws, parsedMsg.uuid)
+                console.log("Received New HostRegistration");
+                game.registerNewHost(ws, parsedMsg.uuid);
                 break;
             case "RegisterAsPlayer":
-                console.log("Received New Player Registration")
-                game.registerNewPlayer(ws, parsedMsg.uuid, parsedMsg.data.playerName)
+                console.log("Received New Player Registration");
+                game.registerNewPlayer(ws, parsedMsg.uuid, parsedMsg.data.playerName);
                 break;
             case "BeginPlaying":
                 beginPlaying()
@@ -68,6 +67,18 @@ wsServer.on('connection', function connection(ws, request) {
                 break;
             case "AdvanceGamePhase":
                 game.advancePlayPhase();
+                break;
+            case "ChosenCard":
+                game.playerChoseCard(parsedMsg.uuid, parsedMsg.data.cardText);
+                break;
+            case "PreviousWhiteDisplayCards":
+                game.previousWhiteDisplayCards();
+                break;
+            case "NextWhiteDisplayCards":
+                game.nextWhiteDisplayCards();
+                break;
+            case "CardCzarChoose":
+                game.cardCzarChoose();
                 break;
             // If we don't recognize the command, we'll ignore it
             default:

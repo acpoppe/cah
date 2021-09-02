@@ -13,9 +13,14 @@ class Game {
     blackDeck;
     whiteDeck;
     playPhase;
+    displayWhiteCardsStartingAtIndex;
+    submittedCards;
+    roundWinnerName;
+    gameWinnerName;
 
     gameTicks;
     timer;
+    timerRunning;
 
     constructor() {
         this.isRunning = false;
@@ -34,6 +39,11 @@ class Game {
         this.playPhase = '';
         this.gameTicks = 0;
         this.timer = 45;
+        this.displayWhiteCardsStartingAtIndex = 0;
+        this.submittedCards = [];
+        this.roundWinnerName = '';
+        this.gameWinnerName = '';
+        this.timerRunning = false;
     }
 
     newGame() {
@@ -50,6 +60,11 @@ class Game {
         this.playPhase = '';
         this.gameTicks = 0;
         this.timer = 45;
+        this.displayWhiteCardsStartingAtIndex = 0;
+        this.submittedCards = [];
+        this.roundWinnerName = '';
+        this.gameWinnerName = '';
+        this.timerRunning = true;
     }
 
     quitGame() {
@@ -63,6 +78,11 @@ class Game {
         this.playPhase = '';
         this.gameTicks = 0;
         this.timer = 45;
+        this.displayWhiteCardsStartingAtIndex = 0;
+        this.submittedCards = [];
+        this.roundWinnerName = '';
+        this.gameWinnerName = '';
+        this.timerRunning = false;
     }
 
     beginPlaying() {
@@ -78,41 +98,58 @@ class Game {
     }
 
     chooseCardCzar() {
+        let czarIndex;
         if (this.cardCzar.uuid === '') {
-            let czarIndex;
-            if (this.cardCzar.uuid === '') {
-                czarIndex = Math.floor(Math.random() * this.playersConnected.length);
-            } else {
-                czarIndex = (this.findPlayerIndexByUUID(this.cardCzar.uuid) + 1) % this.playersConnected.length;
-                this.findPlayerByUUID(this.cardCzar.uuid).isCardCzar = false;
-            }
-            this.playersConnected[czarIndex].isCardCzar = true;
-            this.cardCzar = this.playersConnected[czarIndex];
+            czarIndex = Math.floor(Math.random() * this.playersConnected.length);
+        } else {
+            czarIndex = (this.findPlayerIndexByUUID(this.cardCzar.uuid) + 1) % this.playersConnected.length;
+            this.findPlayerByUUID(this.cardCzar.uuid).isCardCzar = false;
         }
+        this.playersConnected[czarIndex].isCardCzar = true;
+        this.cardCzar = this.playersConnected[czarIndex];
     }
 
     gameTick() {
-        if (this.gameMode === "PLAYING") {
+        if (this.gameMode === "PLAYING" && this.timerRunning) {
             this.gameTicks++;
             if (this.gameTicks % 20 === 0) {
                 this.gameTicks = 0;
                 this.timer--;
                 if (this.timer === -1) {
-                    this.timer = 45;
+                    //this.timer = 45;
+                    this.timeRanOut();
                 }
                 this.updateGameStateForAllHosts();
             }
         }
     }
 
+    timeRanOut() {
+        const payload = {
+            senderType: "server",
+            command: "ServerEnding",
+            data: ""
+        }
+        this.hostsConnected.forEach(host => {
+            host.connection.send(JSON.stringify(payload))
+        })
+        this.playersConnected.forEach(player => {
+            player.connection.send(JSON.stringify(payload))
+        })
+        this.quitGame();
+    }
+
     advancePlayPhase() {
         this.gameTicks = 0;
-        this.timer = 0;
+        this.timer = 45;
         if (this.playPhase === "ANNOUNCE_CZAR") {
             this.playPhase = "CHOOSE_CARDS";
         } else if (this.playPhase === "CHOOSE_CARDS") {
+            this.timer = 90;
+            this.randomizeWhiteDisplayCards();
             this.playPhase = "CHOOSE_WINNER";
         } else if (this.playPhase === "CHOOSE_WINNER") {
+            this.chooseCardCzar();
             this.playPhase = "SHOW_SCORE_WITH_ANNOUNCE_CZAR";
         } else if (this.playPhase === "SHOW_SCORE_WITH_ANNOUNCE_CZAR") {
             this.playPhase = "CHOOSE_CARDS";
@@ -121,8 +158,61 @@ class Game {
         this.updateGameStateForAllPlayers();
     }
 
+    randomizeWhiteDisplayCards() {
+        this.playersConnected.forEach(player => {
+            if (!player.isCardCzar) {
+                for (let i = 0; i < player.submittedCards.length; i++) {
+                    this.submittedCards.push(player.submittedCards[i]);
+                }
+            }
+        });
+
+        let pick = this.dealtBlackCard.pick;
+        for (let i = ((this.submittedCards.length/pick) - 1); i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            for (let k = 0; k < pick; k++) {
+                [this.submittedCards[(i*pick)+k], this.submittedCards[(j*pick)+k]] = [this.submittedCards[(j*pick)+k], this.submittedCards[(i*pick)+k]];
+            }
+        }
+    }
+
+    nextWhiteDisplayCards() {
+        this.displayWhiteCardsStartingAtIndex = (this.displayWhiteCardsStartingAtIndex + this.dealtBlackCard.pick) % this.submittedCards.length;
+    }
+
+    previousWhiteDisplayCards() {
+        if (this.displayWhiteCardsStartingAtIndex === 0) {
+            this.displayWhiteCardsStartingAtIndex = this.submittedCards.length - this.dealtBlackCard.pick;
+        } else {
+            this.displayWhiteCardsStartingAtIndex = (this.displayWhiteCardsStartingAtIndex - this.dealtBlackCard.pick) % this.submittedCards.length;
+        }
+    }
+
+    cardCzarChoose() {
+        let cardText = this.submittedCards[this.displayWhiteCardsStartingAtIndex];
+
+        this.playersConnected.forEach(player => {
+            if (player.submittedCards.includes(cardText)) {
+                player.score = player.score + 1;
+                if (player.score === 10) {
+                    this.gameWinnerName = player.playerName;
+                    this.showFinalScore();
+                    return;
+                }
+                this.roundWinnerName = player.playerName;
+            }
+            player.submittedCards = [];
+        });
+
+        this.submittedCards = [];
+        this.dealTenCardsToEachPlayer();
+        this.dealtBlackCard = this.blackDeck.pullTopCard();
+        this.advancePlayPhase();
+    }
+
     showFinalScore() {
         this.playPhase = "SHOW_SCORE";
+        this.timerRunning = false;
         this.gameTicks = 0;
         this.timer = 0;
         this.updateGameStateForAllHosts();
@@ -181,6 +271,7 @@ class Game {
                 command: "UpdateHostStatus",
                 data: this.generateGameStateForHost()
             };
+            console.log(payload);
             // readyState is an enum where 1 means OPEN
             if (host.connection.readyState === 1) {
                 host.connection.send(JSON.stringify(payload));
@@ -213,7 +304,11 @@ class Game {
             dealtBlackCard: this.dealtBlackCard,
             players: this.playersConnected,
             playPhase: this.playPhase,
-            timer: this.timer
+            timer: this.timer,
+            submittedCards: this.submittedCards,
+            whiteCardStartingIndex: this.displayWhiteCardsStartingAtIndex,
+            roundWinnerName: this.roundWinnerName,
+            gameWinnerName: this.gameWinnerName
         };
         return state;
     }
@@ -238,6 +333,28 @@ class Game {
         this.playersConnected.forEach(player => {
             this.whiteDeck.dealCardsToTen(player);
         })
+    }
+
+    playerChoseCard(playerUUID, cardText) {
+        let player = this.findPlayerByUUID(playerUUID);
+        player.hand = player.hand.filter(e => e !== cardText);
+        player.submittedCards.push(cardText);
+        let allPlayersPicked = this.checkIfAllPlayersHavePicked();
+        if (!allPlayersPicked) {
+            this.updateGameStateForAllPlayers();
+        } else {
+            this.advancePlayPhase();
+        }
+    }
+
+    checkIfAllPlayersHavePicked() {
+        for (let i = 0; i < this.playersConnected.length; i++) {
+            if (this.playersConnected[i].submittedCards.length !== this.dealtBlackCard.pick &&
+                !this.playersConnected[i].isCardCzar) {
+                return false;
+            }
+        }
+        return true;
     }
 
     findHostByUUID(uuid) {

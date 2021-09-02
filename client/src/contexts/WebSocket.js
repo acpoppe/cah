@@ -79,7 +79,7 @@ const WebSocketGoodies = ({ children }) => {
     }
 
     const socketConnect = () => {
-        let sock = new WebSocket('ws://192.168.1.11:9898');
+        let sock = new WebSocket('wss://allisonpoppe.dev/cah');
 
         sock.onopen = function () {
             console.log("Client: Opened connection with server")
@@ -173,6 +173,22 @@ const WebSocketGoodies = ({ children }) => {
         sendMessage("AdvanceGamePhase", "");
     }
 
+    const sendCardChoice = (textOnCard) => {
+        sendMessage("ChosenCard", {cardText: textOnCard});
+    }
+
+    const nextWhiteDisplayCards = () => {
+        sendMessage("NextWhiteDisplayCards", "");
+    }
+
+    const previousWhiteDisplayCards = () => {
+        sendMessage("PreviousWhiteDisplayCards", "");
+    }
+
+    const cardCzarChoose = () => {
+        sendMessage("CardCzarChoose", "");
+    }
+
 /***************************************************
  *  PASSED DOWN DATA
  ****************************************************/
@@ -184,7 +200,11 @@ const WebSocketGoodies = ({ children }) => {
         socketClose,
         sendMessage,
         updatePlayerName,
-        advancePlayPhase
+        advancePlayPhase,
+        sendCardChoice,
+        nextWhiteDisplayCards,
+        previousWhiteDisplayCards,
+        cardCzarChoose
     };
 
 

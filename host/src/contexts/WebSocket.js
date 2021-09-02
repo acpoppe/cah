@@ -76,7 +76,7 @@ const WebSocketGoodies = ({ children }) => {
     }
 
     const socketConnect = () => {
-        let sock = new WebSocket('ws://192.168.1.11:9898');
+        let sock = new WebSocket('wss://allisonpoppe.dev/cah');
 
         sock.onopen = function () {
             console.log("Host: Opened connection with server");
